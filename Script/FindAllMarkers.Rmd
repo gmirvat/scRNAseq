@@ -1,0 +1,127 @@
+---
+title: "FindALLMArkers"
+author: "Mirvat"
+date: "2023-11-27"
+output: html_document
+---
+
+
+##Use this Analysis
+```{r setup, include=FALSE}
+root_directory <- "/Users/mirvat/Documents/Bioinformatics/March13_2023/Smad4_Single_Cell/Analysis/" # set it to your preferred directory
+knitr::opts_chunk$set(
+  tidy = TRUE,
+  tidy.opts = list(width.cutoff = 120),
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+```{r}
+# Load libraries
+suppressMessages(require(Seurat))
+suppressMessages(require(tidyverse))
+suppressMessages(require(scales))
+suppressMessages(require(cowplot))
+suppressMessages(require(RCurl))
+#suppressMessages(require(sctransform))
+#library(clustree)
+library('irlba')
+library(Matrix)
+
+```
+
+
+Just for the analaysis I did this 
+```{#r echo=FALSE}
+options(Seurat.object.assay.version = "v3")
+
+seurat_integrated <- readRDS("results/Analysis_V1/integrated_seurat_Resolution.rds")
+
+#seurat_integrated 
+DefaultAssay(seurat_integrated) <- "RNA"
+Idents(object = seurat_integrated) <- "integrated_snn_res.2.2"
+
+
+markers <- FindAllMarkers(object = seurat_integrated, 
+                          only.pos = TRUE,
+                          logfc.threshold = 0.25, test.use = "wilcox")   
+
+write.csv(markers, "results/Analysis_V1/All_maker_identification_per_cluster_resolution2.2_V1_27Nov.csv", row.names = F)
+```
+
+Interpretation of the marker results
+
+Using Seurat for marker identification is a rather quick and dirty way to identify markers. Usually the top markers are relatively trustworthy; however, because of inflated p-values, many of the less significant genes are not so trustworthy as markers.
+
+When looking at the output, we suggest looking for marker genes with large differences in expression between pct.1 and pct.2 and larger fold changes. For instance if pct.1 = 0.90 and pct.2 = 0.80 and had lower log2 fold changes, that marker might not be as exciting. However, if pct.2 = 0.1 instead, then it would be a lot more exciting.
+
+When trying to understand the biology of the marker results it’s helpful to have the gene names instead of the Ensembl IDs, so we can merge our results with our annotations acquired previously:
+```{r}
+# Merge gene annotations to marker results
+all_markers <- read.csv("results/Analysis_V1/All_maker_identification_per_cluster_resolution2.2_V1_27Nov.csv")
+head(all_markers)
+annotations<- read.csv("data/annotations.csv")
+
+all_markers <- left_join(all_markers, 
+                         annotations[, c(1:2, 4, 5)], 
+                         by = c("gene" = "gene_name"))
+
+View(all_markers)     
+```
+After the merge, the order of the columns is not as intuitive, so we will reorder the columns to make the results table more readable.
+
+# Rearrange order of columns to make clearer
+all_markers <- all_markers[, c(6:8, 1:5, 9:10)]
+```{r}
+# Rearrange order of columns to make clearer
+all_markers <- all_markers[, c(6,8,7, 1:5, 9:10)]
+
+# Write results to file
+write.csv(all_markers, "results/Analysis_V1/all_markers_withGeneDescription.csv", quote = F)
+```
+in addition to all of the markers, it can be helpful to explore the most significant marker genes. Let’s return the top 10 marker genes per cluster.
+```{r}
+# Return top 10 markers for cluster specified 'x'
+gen_marker_table <- function(x){
+  all_markers[all_markers$cluster == x, ] %>%
+  head(n=10)
+}
+
+# Create a data frame of results for clusters 0-6
+top10_markers <- map_dfr(0:29, gen_marker_table)
+
+View(top10_markers)
+
+# Write results to file
+write.csv(top10_markers, "results/Analysis_V1/top10_markers_fromAllMarkers.csv", quote = F)
+
+
+gen_marker_table2 <- function(x){
+  all_markers[all_markers$cluster == x, ] %>%
+  head(n=5)
+}
+# Create a data frame of results for clusters 0-29
+top5 <- map_dfr(0:29, gen_marker_table2)
+DefaultAssay(seurat_integrated) <- "RNA"
+
+png("figures/Analysis_V1/Heatmap_celltypes_All_top5_27Nov.png", res =300, height = 15, width=20, units = "in")
+DoHeatmap(seurat_integrated , features = top5_markers$gene, slot = "scale.data")
+dev.off()
+
+# Create a data frame of results for clusters 0-6
+top10_markers <- map_dfr(0:29, gen_marker_table)
+#####This Based on the logFC
+all_markers %>%
+    group_by(cluster) %>%
+    dplyr::filter(avg_log2FC > 1) %>%
+    slice_head(n = 10) %>%
+    ungroup() -> top10
+
+write.csv(top10, "results/Analysis_V1/top10_logFC_morethan1_markers_fromAllMarkers.csv", quote = F)
+
+```
+```{r}
+#mmusculus
+```
+

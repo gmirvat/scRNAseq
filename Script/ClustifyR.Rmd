@@ -1,0 +1,224 @@
+---
+title: "ClustifyR"
+author: "Mirvat"
+date: "2023-11-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+root_directory <- "/Users/mirvat/Documents/Bioinformatics/March13_2023/Smad4_Single_Cell/Analysis/" # set it to your preferred directory
+knitr::opts_chunk$set(
+  tidy = TRUE,
+  tidy.opts = list(width.cutoff = 120),
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+```{r}
+# Load libraries
+suppressMessages(require(Seurat))
+suppressMessages(require(tidyverse))
+suppressMessages(require(scales))
+suppressMessages(require(cowplot))
+suppressMessages(require(RCurl))
+#suppressMessages(require(sctransform))
+#library(clustree)
+library('irlba')
+library(Matrix)
+```
+
+```{r}
+options(Seurat.object.assay.version = "v3")
+
+seurat_integrated <- readRDS("results/Analysis_V1/integrated_seurat_Resolution.rds")
+```
+get all the refrence datasets that you can use to map the cells 
+```{r}
+#remotes::install_github("rnabioco/clustifyrdata")
+library(clustifyrdata)
+#https://github.com/rnabioco/clustifyrdatahub
+
+#####use the  Mouse Cell Atlas
+seurat_integrated <- clustify(
+  input = seurat_integrated,
+  cluster_col = "integrated_snn_res.2.2",
+  ref_mat = ref_MCA,
+  seurat_out = TRUE
+)
+
+metadata <- seurat_integrated@meta.data
+
+
+# calculate correlation
+d <- as.data.frame(table(metadata$type, metadata$integrated_snn_res.2.2))
+
+#ref_MCA
+
+names(d) <- c("ref_MCA", "cluster2.2", "n")
+
+d
+
+```
+```{r}
+
+res <- clustify(
+  input = seurat_integrated,
+  metadata = seurat_integrated$type,
+  ref_mat = ref_MCA
+)
+
+plot_best_call(
+  cor_mat = res,
+  metadata = pbmc_meta,
+  cluster_col = "classified"
+)
+
+
+library(clustifyrdata)
+#Mouse RNA-seq from 28 cell types
+
+seurat_integrated <- clustify(
+  input = seurat_integrated,
+  cluster_col = "integrated_snn_res.2.2",
+  ref_mat = ref_mouse.rnaseq,
+  seurat_out = TRUE
+)
+#names(metadata)[names(metadata)=="type.clustify"] <- "clustiyr.ref_mouse.rnaseq"
+metadata <- seurat_integrated@meta.data
+c <- as.data.frame(table(metadata$type.clustify, metadata$integrated_snn_res.2.2))
+
+names(c) <- c("ref_mouse.rnaseq", "cluster2.2", "n")
+
+c
+```
+
+```{r}
+#ref_moca_main	Mus musculus	Mouse Organogenesis Cell Atlas (main cell types)
+
+seurat_integrated <- clustify(
+  input = seurat_integrated,
+  cluster_col = "integrated_snn_res.2.2",
+  ref_mat = ref_moca_main,
+  seurat_out = TRUE
+)
+
+metadata <- seurat_integrated@meta.data
+names(metadata)[names(metadata)=="type.clustify.clustify"] <- "clustiyr.ref_moca_main"
+
+b <- as.data.frame(table(metadata$type.clustify.clustify, metadata$integrated_snn_res.2.2))
+names(b) <- c("ref_moca_main", "cluster2.2", "n")
+
+b
+```
+```{r}
+seurat_integrated <- clustify(
+  input = seurat_integrated,
+  cluster_col = "integrated_snn_res.2.2",
+  ref_mat = ref_tabula_muris_facs,
+  seurat_out = TRUE
+)
+
+metadata <- seurat_integrated@meta.data
+a <- as.data.frame(table(metadata$type.clustify.clustify.clustify, metadata$integrated_snn_res.2.2))
+names(a) <- c("ref_tabula_muris_facs", "cluster2.2", "n")
+a
+
+```
+
+
+```{r}
+seurat_integrated <- clustify(
+  input = seurat_integrated,
+  cluster_col = "integrated_snn_res.2.2",
+  ref_mat = ref_immgen,
+  seurat_out = TRUE
+)
+
+metadata <- seurat_integrated@meta.data
+e <- as.data.frame(table(metadata$type.clustify.clustify.clustify.clustify, metadata$integrated_snn_res.2.2))
+names(e) <- c("ref_immgen", "cluster2.2", "n")
+e
+
+```
+
+```{r}
+seurat_integrated <- clustify(
+  input = seurat_integrated,
+  cluster_col = "integrated_snn_res.2.2",
+  ref_mat = ref_tabula_muris_drop,
+  seurat_out = TRUE
+)
+
+metadata <- seurat_integrated@meta.data
+f <- as.data.frame(table(metadata$type.clustify.clustify.clustify.clustify.clustify, metadata$integrated_snn_res.2.2))
+names(f) <- c("ref_tabula_muris_drop", "cluster2.2", "n")
+f
+
+
+```
+```{r}
+types <- inner_join(a,b,  by=c("cluster2.2", "n"))
+types2 <- inner_join(c,d, by=c("cluster2.2", "n"))
+types3 <- inner_join(e,f, by=c("cluster2.2", "n"))
+cell.types <- inner_join(types, types2, by=c("cluster2.2", "n"))
+cell.types <- inner_join(cell.types, types3, by=c("cluster2.2", "n"))
+
+cell.types <- cell.types  %>%  group_by(cluster2.2) %>% dplyr::filter(n!="0")
+
+write.csv(cell.types, "results/Analysis_V1/cell_type_prediction_clustifyR.csv")
+
+```
+
+```{r}
+names(metadata)[names(metadata)=="type"] <- "res2.2.ref_MCA"
+names(metadata)[names(metadata)=="type.clustify.clustify.clustify.clustify.clustify"] <- "ref_tabula_muris_drop"
+names(metadata)[names(metadata)=="type.clustify.clustify"] <- "clustiyr.ref_moca_main"
+
+a <- as.data.frame(table(metadata$type.clustify.clustify.clustify, metadata$integrated_snn_res.2.2))
+names(metadata)[names(metadata)=="type.clustify.clustify.clustify" ] <- "ref_tabula_muris_facs"
+
+
+b <- as.data.frame(table(metadata$type.clustify.clustify, metadata$integrated_snn_res.2.2))
+names(b) <- c("ref_moca_main", "cluster2.2", "n")
+
+```
+
+library(clustifyr)
+library(usethis)
+library(SingleR)
+ref_mouse.rnaseq <- average_clusters(
+  SingleR::mouse.rnaseq$data,
+  SingleR::mouse.rnaseq$types,
+  if_log = F
+)
+
+d1 <- c(
+    paste0("[", "ref_MCA", "](", "https://github.com/rnabioco/clustifyrdata/raw/main/data/ref_MCA.rda", ")"),
+    "Mouse Cell Atlas",
+    dim(clustifyrdata::ref_MCA)[2],
+    dim(clustifyrdata::ref_MCA)[1],
+    "mouse",
+    paste0("[from](", "https://www.cell.com/cell/fulltext/S0092-8674(18)30116-8", ")")
+)
+
+usethis::use_data(ref_mouse.rnaseq, compress = "xz", overwrite = TRUE)
+```
+
+```{r}
+n_cells2 <- FetchData(seurat_integrated, 
+                     vars = c("ident", "sample")) %>% 
+        dplyr::count(ident,  sample)
+
+n_cell.p <- n_cells2 %>% group_by(ident) %>% summarize(total_count = sum(n))
+
+df <- left_join(n_cells2 , n_cell.p,  by = "ident") %>%
+  mutate(proportion = n / total_count)
+
+
+
+ 
+
+write.csv(df, "results/Analysis_V1/number_cells_sampleOnly_cluster.csv", row.names = FALSE)
+
+```
