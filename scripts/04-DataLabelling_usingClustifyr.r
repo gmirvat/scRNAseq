@@ -1,58 +1,52 @@
 
-
+# https://github.com/rnabioco/clustifyr
 #remotes::install_github("rnabioco/clustifyrdata")
+#https://rnabioco.github.io/clustifyrdata/articles/download_refs.html
+# to use this label transfer, please check the available datasets to use based on your own experiment
 library(clustifyrdata)
+library(clustifyr)
+
+#After picking the best resolution
+#use it to predict cell type 
+# use of ref_MCA Mouse Cell Atlas
+#some databases are comming with the library(clustifyr)
+
 seurat_integrated <- clustify(
   input = seurat_integrated,
-  cluster_col = "integrated_snn_res.2.2",
+  cluster_col = "integrated_snn_res.1.2",
   ref_mat = ref_MCA,
   seurat_out = TRUE
 )
-metadata <- seurat_integrated@meta.data
-# calculate correlation
-
-
-
-res <- clustify(
-  input = seurat_integrated,
-  metadata = seurat_integrated$type,
-  ref_mat = ref_MCA
-)
-
-plot_best_call(
-  cor_mat = res,
-  metadata = pbmc_meta,
-  cluster_col = "classified"
-)
-
-
-library(clustifyrdata)
-#https://github.com/rnabioco/clustifyrdatahub
-seurat_integrated <- clustify(
-  input = seurat_integrated,
-  cluster_col = "integrated_snn_res.2.2",
-  ref_mat = ref_mouse.rnaseq,
-  seurat_out = TRUE
-)
 
 metadata <- seurat_integrated@meta.data
-table(metadata$type.clustify)
-library(clustifyr)
-library(usethis)
-library(SingleR)
-ref_mouse.rnaseq <- average_clusters(
-  SingleR::mouse.rnaseq$data,
-  SingleR::mouse.rnaseq$types,
-  if_log = F
-)
+#the type is the column with the predicated cell type
 
-d1 <- c(
-  paste0("[", "ref_MCA", "](", "https://github.com/rnabioco/clustifyrdata/raw/main/data/ref_MCA.rda", ")"),
-  "Mouse Cell Atlas",
-  dim(clustifyrdata::ref_MCA)[2],
-  dim(clustifyrdata::ref_MCA)[1],
-  "mouse",
-  paste0("[from](", "https://www.cell.com/cell/fulltext/S0092-8674(18)30116-8", ")")
-)
+pred.CB <- as.data.frame (table(seurat_integrated@meta.data$type, seurat_integrated@meta.data$integrated_snn_res.1.2))
+#This only gives on prediction per cluster and if not predicting any thing it will be 0
 
-usethis::use_data(ref_mouse.rnaseq, compress = "xz", overwrite = TRUE)
+pred.CB1 <- pred.CB  %>% group_by (Var1) %>% filter(Freq >0)
+names(pred.CB1)[names(pred.CB1)=="Var1"] <- "cell_type_CB"
+names(pred.CB1)[names(pred.CB1)=="Var2"] <- "Cluster_id"
+
+pred.CB1 <- pred.CB1 %>% group_by(Cluster_id) %>%  arrange(desc (Freq))
+
+#if the expected cell types as the predicted, then proceed below, otherwise check other dataset or use the topmarker percluster to identify the cell type 
+#Name the clusters based on clustify R 
+#or you can keep type if it is the only one used, is for clustify
+seurat_integrated$seuratClu.Res.1.2 <- seurat_integrated@meta.data$type
+
+###plotting based on classifyR 
+#to plot 
+Idents(object = seurat_integrated) <- "seuratClu.Res.1.2"
+  DimPlot(object = seurat_integrated, 
+         reduction = "umap", 
+         label = TRUE,
+         label.size = 5,
+         repel = TRUE)
+
+
+ 
+
+
+
+
