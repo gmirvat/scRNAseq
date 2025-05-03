@@ -37,6 +37,7 @@ seurat_integrated@meta.data$clusters_condition <- paste(as.vector(seurat_integra
 Idents(seurat_integrated) <- "seurat_integrated$clusters_condition" #set this as the cell identity 
 table(seurat_integrated@meta.data$clusters_condition)
 dir.create("results/MAST_DGE/")
+
 output <- "results/MAST_DGE/DGE_resolution_celltype_" 
 Idents(seurat_integrated) <- seurat_integrated@meta.data$clusters_condition
 #e,g write the cell types you need to do DGE for them 
@@ -64,8 +65,7 @@ for (i in A){
   write.csv(downFl, file = paste0(output, i, "_downFl.csv"))
 }
 
-#plot top 10 genes  per cluster in a heatmap
-
+#-----plot top 10 genes  per cluster in a heatmap-------
 
 Markers_v1_1.2 <- read.table("Analysis/All_maker_identification_per_cluster_resolution_1.2_8Jan.csv", sep=",", header=T)
 Markers_v1_1.2<-  Markers_v1_1.2 %>%  mutate(Diff=pct.1-pct.2) 
@@ -76,11 +76,11 @@ top10_1.2 <- Markers_v1_1.2 %>%  group_by(cluster) %>%  top_n(10,Diff)
 DefaultAssay(seurat_integrated) <- "RNA"
 Idents(object = seurat_integrated) <- "celltype"
 seurat_integrated <- ScaleData(seurat_integrated)
+
 jpg("figures/Heatmap_SC_labelled_celltype_top10.jpg", res=300,width = 20, height = 25, units = "in")
 
 DoHeatmap(seurat_integrated , features = top10_1.2$gene, slot = "scale.data")
-
-
+dev.off ()
 
 
 sessionInfo()
