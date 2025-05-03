@@ -5,7 +5,7 @@
 #3. See if the proportion of the cell type differ between the genotype
 #4. stack plot for the celll type
 #5. e.g dotplots for different cell types, and feature plot for genes 
-#Note: the plots are in the figures folder 
+#Note: the plots are in the figures folder. for publication Use png to save, for this repo I used png or jpg to decrease file size
 
 #author: "Mirvat"
 #date: "2024-01-19"
@@ -28,6 +28,7 @@ library(viridis)
 library(readxl)
 #devtools::install_github("rpolicastro/scProportionTest")
 library("scProportionTest")
+library(dittoSeq)
 
 options(Seurat.object.assay.version = "v3")
 seurat_integrated <- readRDS("results/integrated_seurat_Resolution.rds")
@@ -90,23 +91,15 @@ DimPlot(object = seurat_integrated,
         repel = TRUE)
 
 #plot by genotype 
+
+jpg("figures/DimPlotcluster_identity_celltype.png.jpg",res=300, height = 5, width=3.3, units = "in")
+
 DimPlot(object = seurat_integrated, 
         reduction = "umap", 
         label = TRUE,
         repel = TRUE, split.by = "group")
 
-
-
-
-DefaultAssay(seurat_integrated) <- "RNA"
-Idents(object = seurat_integrated) <- "celltype"
-#Dot plot Enterocyte signature 
-# Paper: Single-cell RNA Sequencing Reveals How the Aryl Hydrocarbon Receptor Shapes Cellular Differentiation Potency in the Mouse Colon 
-features <- c("Krt19", "Krt8", "Lgals3", "Lypd8", "Selenbp1", "Lgals4", "Ethe1", "Fth1", "Gsdmc4", "Maob", "Ces2a", "Ces2c",
-              "Ces2e", "Chp2", "Coro2a", "Cyp2c65", "Cyp2c68", "Dgkq", "Dpep1", "Emp1", "Krt20", "Cdkn1a", "Mxd1", "Sprr2a3", "Fam3b",
-              "Clec2h", "Fhl1", "Gde1", "Guca2a", "Il18")
-  
-Clustered_DotPlot(seurat_object = seurat_integrated, features = features, k=8)
+dev.off()
 
 # identify if the proportion of cells are different between the 2 groups
 #use "scProportionTest" library
@@ -118,151 +111,24 @@ prop_test <- permutation_test(
   sample_identity = "sample")
 
 Test <- prop_test@results$permutation
-write.csv(Test, "StatisticsForTheproprtionofCells_res_celltype_from_1.2.csv", row.names = F)
-tiff("figures/Celltype_from1_2/SC_proprtionOfcell_scproprtion_res_celltype_from_1.2_log2FD_1.tiff", res =300, height = 4, width=6, units = "in")
+write.csv(Test, "StatisticsForTheproprtionofCells_res_celltype.csv", row.names = F)
+#---Plot----
+png("figures/SC_proportionOfcelltype_log2FD_1.png", res =300, height = 4, width=6, units = "in")
 permutation_plot(prop_test,log2FD_threshold = 1)
 dev.off()
 
 
-permutation_plot(log2FD_threshold = 1 ,prop_test)
-permutation_plot(prop_test)
-
-
-
-library(dittoSeq)
+#library(dittoSeq)
 #pdf("figures/PercentageOfCells_With_And_WithoutMACSBeads.png", res =300, height = 5, width=4)
 p <- print(dittoBarPlot(seurat_integrated, "celltype", group.by = "group",
                         data.out = TRUE))
-tiff("figures/Celltype_from1_2/PercentageOfCells_Smad4_celltype_reso_1.2.tiff",res=300, height = 5, width=3.3, units = "in")
+png("figures/StackplotPercentageOfCells_Smad4_celltype.png",res=300, height = 5, width=3.3, units = "in")
 
 p
 dev.off()
-p
-
-
-
-
-DefaultAssay(seurat_integrated) <- "RNA"
-Idents(object = seurat_integrated) <- "celltype"
-#TA, and stem cell with extra Wnt target genes.
-features <- c("Lgr5", "Olfm4", "Ascl2", "Mki67", "Tuba1b", "Hist1h1b","Hmgb2", "Cks2", "Axin2","Cd44","Ccnd1", "Ctnnb1", "Lef1", "Bcl9", "Nkd1", "Myc", "Tacstd2", "Fmnl2", "Kcnq1", 
-              "SLC12A2", "Cachd1", "Smoc2", "Lrig1", "Ptpro", "Ephb2" )
-
-Clustered_DotPlot(seurat_object = seurat_integrated, features = features, k=8)
-tiff("figures/Celltype_from1_2/StemCellmarkers_celltype_from 1.2 resolution.png", res =300, height = 6, width=5)
-Clustered_DotPlot(seurat_object = seurat_integrated, features = features, k=8)
-dev.off()
-
-
-
-DefaultAssay(seurat_integrated) <- "RNA"
-Idents(object = seurat_integrated) <- "celltype"
-seurat_integrated <- ScaleData(seurat_integrated)
-tiff("figures/Celltype_from1_2/Heatmap_SC_labelled_celltype_top5_only.tiff", res=300,width = 20, height = 25, units = "in")
-
-DoHeatmap(seurat_integrated , features = top10_1.2$gene, slot = "scale.data")
-
-dev.off()
-
-
-#The analysis performed in the script Difference between WT and Floxedd _Bass Request
-
-SmadWT <- subset(seurat_integrated,  subset = sample == "WT")
-SmadFloxed <- subset(x = seurat_integrated, subset = sample == "Floxed")
-
-Idents(object = SmadWT) <- "integrated_snn_res.2.2"
-DefaultAssay(SmadWT) <- "RNA"
-
-
-
-split seurat_integrated to StemCell_TA, seurat_Paneth, and seurat_Enterocytes, for plotting 
-
-
-
-table(seurat_integrated@meta.data$celltype)
-Idents(object = seurat_integrated) <- "celltype"
-seurat_StemCell_TA <- subset(seurat_integrated, idents = c("Tacstd2 hi", "Fmnl2 hi",  "TA",  "Secretory Pr"  ,   "Cachd1 hi"  ,     "Slc14a1 hi" ,"Slc12a2 hi",      "Lgr5 ISC","Pak3 hi"  ,      "Clu hi"  ))
-
-
-
-
-
-
 
 Idents(object = seurat_integrated) <- "celltype"
-seurat_Enterocytes <- subset(seurat_integrated, idents = c("EC-1", "EC-2", "ECepr", "EClpr" ))
-DefaultAssay(seurat_Enterocytes) <- "RNA"
-
-#these markers are enterocyte markes from  single servy in the small intestine
-Idents(object = seurat_Enterocytes) <- "celltype"
-features <- c("Krt19", "Krt8", "Lgals3", "Lypd8", "Selenbp1", "Lgals4", "Ethe1", "Fth1", "Gsdmc4", "Maob", "Ces2a", "Ces2c", "Ces2e", "Chp2", "Coro2a", "Cyp2c65", "Cyp2c68", "Dgkq", "Dpep1", "Emp1", "Krt20", "Cdkn1a", "Mxd1", "Sprr2a3", "Fam3b","Clec2h", "Fhl1", "Gde1", "Guca2a", "Il18", "Reg3g", "Apoa1", "Reg4", "Dmbt1", "Reg3b", "Mt1","Mt2")
-
-
-tiff("figures/Celltype_from1_2/Heatmap_Enterocyte_subset_labelled_only.tiff", res=300,width = 5, height = 12, units = "in")
-
-DoHeatmap(seurat_Enterocytes , features = features, slot = "scale.data")
-
-dev.off()
-
-tiff("figures/Celltype_from1_2/ClusteredDotPlot_Heatmap_Enterocyte_subset_labelled_only_celltype_from 1.2_resolution.png", res =300, height = 7, width=5, units = "in")
-Clustered_DotPlot(seurat_object = seurat_Enterocytes, features = features, k=8)
-dev.off()
-
-Clustered_DotPlot(seurat_object = seurat_Enterocytes, features = features, k=8)
-
-
-
-features <- c("Reg3b", "Reg3g")
-#sample_colors <- c("dodgerblue", "firebrick1")
-sample_colors <- c("#999999","#E69F00")
-my_levels =c( "ECepr","EClpr", "EC-1", "EC-2")
-Idents(seurat_Enterocytes) <- factor(Idents(seurat_Enterocytes), levels= my_levels)
-
-tiff("figures/Celltype_from1_2/Violin_plot_stack_cluster_Reg3g-bEnterocytes_angle90_split_scCustom.png", res=300,width = 4, height = 2, units = "in")
-Stacked_VlnPlot(pt.size = 0.05, seurat_Enterocytes, features = features, x_lab_rotate = TRUE,
-                colors_use = sample_colors, split.by = "group",  plot_legend = TRUE)+
-  theme(axis.text.y = element_text(size = .2))+ #to change the font of the gene name
-  guides(color="none") +#to remove the idenity label 
-  theme(legend.title = element_text(size=1))
-dev.off()
-
-# cd76 Macrophage marker  cd68 Monocyte marker 
-
-features <- c("Cd74", "Cd68")
-#sample_colors <- c("dodgerblue", "firebrick1")
-sample_colors <- c("#999999","#E69F00")
-
-#Idents(seurat_Enterocytes) <- factor(Idents(seurat_Enterocytes), levels= my_levels)
-
-#tiff("figures/Celltype_from1_2/Violin_plot_stack_cluster_Reg3g-bEnterocytes_angle90_split_scCustom.png", res=300,width = 4, height = 2, units = "in")
-Stacked_VlnPlot( seurat_StemCell_TA, features = features, x_lab_rotate = TRUE,
-                 colors_use = sample_colors, split.by = "group",  plot_legend = TRUE)+
-  theme(axis.text.y = element_text(size = .2))+ #to change the font of the gene name
-  guides(color="none") +#to remove the idenity label 
-  theme(legend.title = element_text(size=1))
-#dev.off()
-
-
-Plot paneth cell maker alone 
-
-Idents(object = seurat_integrated) <- "celltype"
-seurat_Paneth <- subset(seurat_integrated, idents = c("Paneth" ))
-DefaultAssay(seurat_Paneth ) <- "RNA"
-
-#these markers are enterocyte markes from  single servy in the small intestine
-Idents(object = seurat_Paneth) <- "celltype"
-features <- c("Lyz1", "Muc2", "Muc3", "Defa30")
-Stacked_VlnPlot( seurat_Paneth, features = features, x_lab_rotate = TRUE,
-                 colors_use = sample_colors, split.by = "group",  plot_legend = TRUE)+
-  theme(axis.text.y = element_text(size = .2))+ #to change the font of the gene name
-  guides(color="none") +#to remove the idenity label 
-  theme(legend.title = element_text(size=1))
-
-plots are required for the paper, save them in tiff
-
-
-Idents(object = seurat_integrated) <- "celltype"
-tiff("figures/Celltype_from1_2/ID1_FeaturePlot_labelled_Cell_type_types_Smad4_labelling.tiff", res =300, height = 4, width=6, units = "in")
+png("figures/Id1_FeaturePlot.png", res =300, height = 4, width=6, units = "in")
 FeaturePlot_scCustom( seurat_integrated, 
                       reduction = "umap", 
                       features = c( "Id1"), 
@@ -271,7 +137,7 @@ FeaturePlot_scCustom( seurat_integrated,
                       label = FALSE, split.by = "group")
 dev.off()
 
-tiff("figures/Celltype_from1_2/Pak3_FeaturePlot_labelled_Cell_type_types_Smad4_labelling.tiff", res =300, height = 4, width=6, units = "in")
+png("figures/Pak3_FeaturePlot.png", res =300, height = 4, width=6, units = "in")
 FeaturePlot_scCustom( seurat_integrated, 
                       reduction = "umap", 
                       features = c( "Pak3"), 
@@ -279,120 +145,20 @@ FeaturePlot_scCustom( seurat_integrated,
                       min.cutoff = 'q10', 
                       label = FALSE, split.by = "group")
 dev.off()
-tiff("figures/Celltype_from1_2/Spp1_FeaturePlot_labelled_Cell_type_types_Smad4_labelling.tiff", res =300, height = 4, width=6, units = "in")
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Spp1"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group")
-dev.off()
-tiff("figures/Celltype_from1_2/Lgr5_FeaturePlot_labelled_Cell_type_types_Smad4_labelling.tiff", res =300, height = 4, width=6, units = "in")
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Lgr5"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group")
 
+#----Plot Markers for the Main cell type-------
+#So we plot the scaled expression across all cell types
+DefaultAssay(seurat_integrated) <- "RNA"
+Idents(object = seurat_integrated) <- "integrated_snn_res.1.2"
+#Another marker for marcrophages is , "lyz2"
+gene.list  <- c("Epcam","Dcn", "Col1a1", "Cd3e", "Cd3g", "Cd74", "H2-Ab1", "S100a8", "S100a9")
+
+jpg("figures/Main_cell_Markers_b.jpg", res=300, width = 8, units = "in",  height = 8)
+FeaturePlot_scCustom(seurat_integrated, features = gene.list, 
+        label = FALSE, order = TRUE, reduction = "umap", figure_plot = TRUE, min.cutoff = 'q10')
 dev.off()
 
-
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Tacstd2"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group")
-Idents(object = seurat_integrated) <- "celltype"
-tiff("figures/Celltype_from1_2/ID1_FeaturePlot_labelled_Cell_type_types_Smad4_labelling_b.tiff", res =300, height = 3, width=5, units = "in")
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Id1"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group", pt.size = 0.2)
-dev.off()
-
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Id1"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group", pt.size = 0.2)
-
-
-
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Reg3b"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group")
-
-
-
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Reg3g"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group")
-
-
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Apoa1"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group")
-
-
-
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Sorbs2"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group")
-
-
-
-FeaturePlot_scCustom( seurat_integrated, 
-                      reduction = "umap", 
-                      features = c( "Ly6a"), 
-                      order = TRUE,
-                      min.cutoff = 'q10', 
-                      label = FALSE, split.by = "group")
-
-
-{#r}
-  seurat_integrated <- BuildClusterTree(seurat_integrated, verbose = FALSE, reorder = TRUE, assay="integrated")
-  PlotClusterTree(seurat_integrated) 
-  Tool(object = seurat_integrated)
-  Tool(object = seurat_integrated, slot = "BuildClusterTree")
-  
-  
-  
-  FeaturePlot_scCustom(seurat_integrated, 
-                       reduction = "umap", 
-                       features = c( "Tacstd2"), 
-                       order = TRUE,
-                       min.cutoff = 'q10', 
-                       label = F, split.by = "group")
-  FeaturePlot_scCustom(seurat_integrated, 
-                       reduction = "umap", 
-                       features = c( "Clu"), 
-                       order = TRUE,
-                       min.cutoff = 'q10', 
-                       label = F, split.by = "group")
-  
-  
-  
-  
-  
-  
-  sessionInfo()
+sessionInfo()
   
   
   
