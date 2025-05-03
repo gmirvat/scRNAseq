@@ -43,15 +43,12 @@ markers %>%
   dplyr::filter(avg_log2FC > 1) %>%
   slice_head(n = 5) %>%
   ungroup() -> top5
-#Idents(object = seurat_integrated) <- "integrated_snn_res.2.2"
-
-#DoHeatmap(seurat_integrated , features = top10$gene) + NoLegend()
 
 DefaultAssay(seurat_integrated) <- "RNA"
 seurat_integrated<- ScaleData(object = seurat_integrated)
 Idents(object = seurat_integrated) <- "integrated_snn_res.1.2"
 
-png("figures/Heatmap_celltypes2_All_last_logFC1.png", res =300, height = 15, width=17, units = "in")
+png("figures/Heatmap_Res1.2.png", res =300, height = 15, width=17, units = "in")
 
 DoHeatmap(seurat_integrated, features = top5$gene) + NoLegend()
 #remove \+ NoLegend() to add the legend
