@@ -28,7 +28,7 @@ seurat_integrated@meta.data$clusters_condition <- paste(as.vector(seurat_integra
 #table (seurat_integrated@meta.data$clusters_condition)
 #Idents(seurat_integrated) <- seurat_integrated$clusters_condition #set this as the cell identity 
 
-###Working function #####this will put the data on the results folder but for each file alone so better to add the data to different folder
+## #####this will add the data on the results folder but for each file alone so better to add the data to different folder
 output <- "results/MAST_DGE/DGE_resolution_0_cluster_Alldata_Nogrouping_"
 
 
@@ -59,14 +59,25 @@ res_top50 <- degenes %>% top_n(n = 50, wt = log2FoldChange) ###3select the top50
 res_lower50 <- degenes %>% top_n(n = 50, wt = -(log2FoldChange))
 top100DEG <- rbind(res_top50 ,res_lower50 )
 
-
-Idents(object = seurat_integrated) <- "integrated_snn_res.0"
 DefaultAssay(seurat_integrated) <- "RNA"
-DEG <- ScaleData(object = seurat_integrated)
+Idents(object = seurat_integrated) <- "integrated_snn_res.0"
+
+seurat_integrated <- ScaleData(object = seurat_integrated)
 
 png("figures/Heatmap_top50_DEG_ALl_RESOLUTION_0.png", res=300, res=300, width = 4, height =8  , units = "in") 
 
-DoHeatmap(DEG, features = as.character(top50DEG$gene), group.by = "sample") 
+DoHeatmap(seurat_integrated, features = as.character(top50DEG$gene), group.by = "sample") 
 
 dev.off()
 
+# Violin Plot of the genes in Pseudobulk analysis using violinPlot
+
+
+png("figures/dittoViloinPlot_Pak3_Pseudobulk.png", res=300, width = 3.2, units = "in",  height = 1.8)
+dittoPlot(seurat_integrated, "Pak3", group.by = "group", jitter.size =0.00001, 
+jitter.width = 0.075, color.panel = c("black", "gray85"), 
+vlnplot.lineweight = 0.3, vlnplot.width = 1)+
+  theme_bw(base_size = 8) + ###to change the font on x and y axis, will add the boundaries with a grid
+   theme(panel.grid = element_blank()) ###Remove the grid generated with theme_bw()
+
+dev.off()
