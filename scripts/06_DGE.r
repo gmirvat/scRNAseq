@@ -1,8 +1,9 @@
 
-git status#title: "DGE"
+#title: "DGE"
 #author: "Mirvat"
 #date: "2023-12-22"
 
+####### use this after AssignCellTypeAndScproportiopn.r
 
 setwd("~/Documents/Analysis/") # set it to your preferred directory
 
@@ -52,15 +53,33 @@ for (i in A){
   write.csv(condition.diffgenes, file = paste0(output, i, ".csv"))
   write.csv(condition.diffgenes, file=paste0(output,i,".csv"))
   
-  
+  #to identify genes  up in Smad4 Floxed 
   upFl <- condition.diffgenes %>%
     dplyr::filter(avg_log2FC < 0)
+  #to identify genes  down in Smad4 Floxed 
   downFl <- condition.diffgenes %>%
     dplyr::filter(avg_log2FC > 0)
   
   write.csv(upFl, file = paste0(output, i, "_upFl.csv"))
   write.csv(downFl, file = paste0(output, i, "_downFl.csv"))
 }
+
+#plot top 10 genes  per cluster in a heatmap
+
+
+Markers_v1_1.2 <- read.table("Analysis/All_maker_identification_per_cluster_resolution_1.2_8Jan.csv", sep=",", header=T)
+Markers_v1_1.2<-  Markers_v1_1.2 %>%  mutate(Diff=pct.1-pct.2) 
+
+top10_1.2 <- Markers_v1_1.2 %>%  group_by(cluster) %>%  top_n(10,Diff) 
+
+
+DefaultAssay(seurat_integrated) <- "RNA"
+Idents(object = seurat_integrated) <- "celltype"
+seurat_integrated <- ScaleData(seurat_integrated)
+jpg("figures/Heatmap_SC_labelled_celltype_top10.jpg", res=300,width = 20, height = 25, units = "in")
+
+DoHeatmap(seurat_integrated , features = top10_1.2$gene, slot = "scale.data")
+
 
 
 
