@@ -1,0 +1,8 @@
+*.rds
+!demo_seurat.rds
+
+.Rhistory
+.DS_Store
+
+creatingA_demo_SeurateObject_forGithub.R
+Notes. to run the app mirvat@Mirvats-MacBook-Pro-93620 shinyApp_SCRNA % Rscript -e "shiny::runApp('app.R')"
