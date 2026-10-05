@@ -1,5 +1,30 @@
 
-#Smad4_single Cell RNA-seq Creating Seurat object and QC with visualization
+# ============================================================
+# 01. Seurat object creation and quality control
+# ============================================================
+#
+# Project:
+# Smad4/TGFβ1-dependent gene expression signatures in
+# conditional intestinal adenoma, organoids and colorectal cancer
+#
+# Purpose:
+# - Import 10X Genomics count matrices
+# - Create Seurat objects
+# - Detect doublets using scDblFinder
+# - Merge experimental groups
+# - Calculate cell-level QC metrics
+# - Visualize QC distributions
+# - Filter low-quality cells and genes
+#
+# Species: Mouse
+#
+# Analysis environment:
+# R 4.2.3
+# Seurat 4.3.0
+#
+# Raw sequencing data are not included in this repository.
+# See the project README for data-access information.
+
 
 #References: 
 # 1. https://satijalab.org/seurat/articles/seurat5_essential_commands
@@ -9,7 +34,8 @@
 options(Seurat.object.assay.version = "v3") #before start reading the files
 
 
-setwd ("~/Documents/scRNA-seq/" )# set it to your preferred directory
+# Set the working directory to the project root before running,
+# or use relative paths throughout the script.
 
 #-----------------------------------------
 #upload the libraries 
@@ -20,10 +46,8 @@ library(SingleCellExperiment)
 library(Seurat)
 library(scDblFinder)
 
-#-----------------------------------------
-# create a v3 assay
-#-----------------------------------------
-options(Seurat.object.assay.version = "v3")
+
+
 
 #-----------------------------------------
 #Read the seq folders out put and creat Seurat object
@@ -61,7 +85,9 @@ Floxed  <- as.Seurat(Floxed.sce)
 
 WT.sce <- as.SingleCellExperiment(WT)
 WT.sce <- scDblFinder(WT.sce, verbose=FALSE)
-table(WT.sce$scDblFinder.class)#
+table(WT.sce$scDblFinder.class)
+#Return back to Seurat
+WT <- as.Seurat(WT.sce)
 #-----------------------------------------
 #Seurat automatically creates some metadata for each of the cells when you use the Read10X() function to read in data.
 #This information is stored in the meta.data slot within the Seurat object.
@@ -97,11 +123,12 @@ merged_seurat$log10GenesPerUMI <- log10(merged_seurat$nFeature_RNA) / log10(merg
 # Compute  Mitochondrial Ratio usisng The PercentageFeatureSet() function 
 #The pattern provided ("^MT-") works for human gene names, "^mt-" for mice
 # -----------------------------------------
+# Mouse mitochondrial genes use the "^mt-" pattern.
 merged_seurat$mitoRatio <- PercentageFeatureSet(object = merged_seurat, pattern = "^mt-") 
 merged_seurat$mitoRatio <- merged_seurat@meta.data$mitoRatio / 100
     
 # -----------------------------------------
-# Create metadata dataframe
+# Extract cell-level metadata for QC visualization and filtering.
 # -----------------------------------------
 metadata <- merged_seurat@meta.data
 # -----------------------------------------
@@ -205,6 +232,8 @@ metadata %>%
 
 #----------Based on the quality matrix #------------
 # Filter out low quality cells using selected thresholds - these will change with experiment
+# QC thresholds were selected based on the distributions observed
+# in this dataset and should be evaluated for each new experiment.
 #---------------------------------
 filtered_seurat <- subset(x = merged_seurat, 
                           subset= (nUMI >= 500) & 
