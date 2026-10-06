@@ -1,28 +1,29 @@
+# ============================================================
+# 02. SCTransform normalization and dataset integration
+# ============================================================
+#
+# Purpose:
+# - Assess cell-cycle effects
+# - Assess potential batch effects
+# - Perform SCTransform normalization
+# - Regress selected technical/cell-cycle covariates
+# - Integrate experimental groups
+# - Perform PCA, UMAP and clustering
+# - Evaluate clustering resolution using clustree
+# - Assess batch effects after integration
+#
+# Raw data and intermediate Seurat objects are not included
+# in this repository. See README for data availability.
+# Expected project structure:
+# data/
+# results/
+# figures/
 
-# "SCT_transform_and_integration"
-#References: https://github.com/lazappi/clustree?tab=readme-ov-file
+# ============================================================
 
-######Exploring the Cell cycle and if there is Batch effect 
-###### SCT 164 the main analysis after exploring the data 
 
-  ##filtered_seurat <- subset(x = merged_seurat, 
-  #                  subset= (nUMI >= 500) & 
-  #                   (nGene >= 250) &
-  #                   (nGene < 7000) &
-  #                    (scDblFinder.class != "doublet")&
-#                  (log10GenesPerUMI > 0.80) & 
-#                 (mitoRatio < 0.15))
-
-  #this script shows how to regress the unwanted effect form mitochondrial genes, cell cycle difference 
-  #I split the seurat and then peformed the analysis. 
-#SCTransform method is more accurate than older methods
-#SCTransform estimates the variance better and does not frequently include these sources of technical variation in the higher PCs.
-#Regress based on cell cycle difference, to clustering based on cell cycle rather than true biology, especially if the dataset has strong cell cycle effects 
-#SCTransform does,  Normalizes, Stabilizes variance, Identifies variable features
-#Optionally regresses confounders
-
-setwd("~/Documents/Analysis/")
-# set it to your preferred directory
+# Set the working directory to the project root before running,
+# or use relative paths throughout the script.
 
 #---------------------------------------------
 # Load libraries
@@ -169,8 +170,10 @@ rm(seurat_batch)
 #Note: for the checking the data and batch effect  use nfeature 2000, but for the analysis use nfeature 3000. 
 
 #Note  with SCTransform, the more PCs we choose the more variation is accounted for when performing the clustering, but it take a lot longer to perform the clustering. Therefore for this analysis, we will use the first 40 PCs to generate the cluster
-#Although the most variation is in the P13
-# The use of 40 PCs is conservative and ensures more of the true biological variance is captured in clustering.
+
+# Forty PCs were used for downstream dimensionality reduction and clustering
+# based on evaluation of the PCA variance structure.
+
 #------------------- SCTransform -----------------------
 #increases the memory limit
 options(future.globals.maxSize = 4000 * 1024^2)
@@ -323,7 +326,8 @@ ggplot(plot_df, aes(cumu, pct, label = rank, color = rank > pcs)) +
 
 seurat_integrated <- FindNeighbors(object = seurat_integrated, 
                                    dims = 1:40)
-#Seurat to use the first 16 principal components (PCs) as input to define cell-to-cell relationships.
+
+# Use the first 40 PCs to construct the cell-cell nearest-neighbor graph.
 
 # Determine the clusters for various resolutions                                
 seurat_integrated <- FindClusters(object = seurat_integrated,
