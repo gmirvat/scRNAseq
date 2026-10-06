@@ -11,7 +11,7 @@ The study investigated the consequences of **Smad4 loss in an Apc-dependent muri
 
 ## Study overview
 
-Conditional activation of the Lgr5-CreER^T2^ system in **Apc^fl/fl^Smad4^fl/fl^** mice generates intestinal adenomas with conditional Smad4 loss. The study compared adenomas with intact Smad4 signalling (**Smad4^+/+**) and adenomas with Smad4 loss (**Smad4^Δ/Δ^**).
+Conditional activation of the Lgr5-CreERT2 system in **Apcfl/flSmad4fl/fl** mice generates intestinal adenomas with conditional Smad4 loss. The study compared adenomas with intact Smad4 signalling (**Smad4+/+**) and adenomas with Smad4 loss (**Smad4Δ/Δ**).
 
 Single-cell RNA sequencing of primary caecal adenomas was used to:
 
@@ -22,7 +22,7 @@ Single-cell RNA sequencing of primary caecal adenomas was used to:
 * identify genotype-associated differential gene expression;
 * investigate progenitor populations associated with Smad4 loss.
 
-The published study identified expansion of **Lgr5^low^, Pak3^high^ and Id1^low^ progenitor populations** in Smad4-deficient caecal adenomas.
+The published study identified expansion of **Lgr5low, Pak3high and Id1low progenitor populations** in Smad4-deficient caecal adenomas.
 
 ## scRNA-seq data
 
@@ -180,13 +180,13 @@ The associated study identified several cellular and transcriptional features as
 
 In particular, Smad4-deficient caecal adenomas showed expansion of:
 
-* **Lgr5^low^ progenitor cells**
-* **Pak3^high^ progenitor cells**
-* **Id1^low^ progenitor cells**
+* **Lgr5low progenitor cells**
+* **Pak3high progenitor cells**
+* **Id1low progenitor cells**
 
 The single-cell analysis therefore provided cellular context for the Smad4-dependent transcriptional signatures identified in the complementary bulk RNA-seq and organoid experiments.
 
-The broader study identified **Id1^low^** and **Spp1^high^** as prominent Smad4/TGF-β1-dependent expression features and subsequently evaluated these signatures in human colorectal cancer.
+The broader study identified **Id1low** and **Spp1high** as prominent Smad4/TGF-β1-dependent expression features and subsequently evaluated these signatures in human colorectal cancer.
 
 ## Figures
 
