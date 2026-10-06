@@ -3,12 +3,9 @@
 # Resolution-0 single-cell differential expression using MAST, comparing WT versus Floxed cells.
 #-----------------------------------
 
-# This script to perform pseudobulk analysis
-# To do this first set the resolution or cluster identity = 0
-
 #-----------------------------------
 #Load libraries
-# Load libraries
+#-----------------------------------
 suppressMessages(require(Seurat))
 suppressMessages(require(tidyverse))
 suppressMessages(require(scales))
