@@ -1,20 +1,25 @@
 
-####Based on the cluster tree I need to identify cluster marker genes. This can be done by FindAllMarkers
-#Best resolution is 1.2 
-#https://satijalab.org/seurat/articles/seurat5_essential_commands
+# ============================================================
+# 03. Cluster marker identification and cell composition
+# ============================================================
+#
+# Purpose:
+# - Identify marker genes for each cluster
+# - Visualize cluster marker expression
+# - Quantify the number and proportion of cells per sample
+#
+# Clustering resolution: 1.2
+# ============================================================
 
-setwd("~/Documents/Analysis/") # set it to your preferred directory
+
+# Run this script from the project root directory.
+# Input and output files are referenced using relative paths.
 
 #-----------------------------------
 #Load libraries
 #-------------------------------
 suppressMessages(require(Seurat))
-suppressMessages(require(tidyverse))
-suppressMessages(require(scales))
-suppressMessages(require(cowplot))
-suppressMessages(require(RCurl))
 suppressMessages(require(dplyr))
-library('irlba')
 library(Matrix)
 
 #remotes::install_github("rnabioco/clustifyrdata")
@@ -27,6 +32,11 @@ seurat_integrated <- readRDS("results/integrated_seurat_Resolution.rds")
 DefaultAssay(seurat_integrated) <- "RNA"
 Idents(object = seurat_integrated) <- "integrated_snn_res.1.2"
 
+# Identify positively expressed marker genes for each cluster.
+# Markers are identified using the Wilcoxon rank-sum test.
+# Only positive markers with log2 fold-change >= 0.25 are retained.
+
+
 markers <- FindAllMarkers(object = seurat_integrated, 
                           only.pos = TRUE,
                           logfc.threshold = 0.25, test.use = "wilcox")                   
@@ -35,14 +45,15 @@ write.csv(markers, "results/All_maker_identification_per_cluster_resolution_1.2.
 #----------------------------------------
 #Visualize with heatmap
 #----------------------------------
-markers <- read.csv("results/All_maker_identification_per_cluster_resolution_1.2_8Jan.csv")
-top_markers <- markers %>%  group_by(cluster) %>%  top_n(5)
+markers <- read.csv("results/All_maker_identification_per_cluster_resolution_1.2.csv")
 
-markers %>%
+top5 <- markers %>%
   group_by(cluster) %>%
   dplyr::filter(avg_log2FC > 1) %>%
   slice_head(n = 5) %>%
-  ungroup() -> top5
+  ungroup() 
+
+# Visualize selected cluster markers using normalized RNA expression.
 
 DefaultAssay(seurat_integrated) <- "RNA"
 seurat_integrated<- ScaleData(object = seurat_integrated)
@@ -57,7 +68,9 @@ dev.off()
 #Identify the number of cells per cluster
 #----------------------------------------------------
 
-####To identify the number of cells per cluster per genotype 
+# Calculate the number and proportion of cells in each cluster
+# for each sample.
+
 n_cells2 <- FetchData(seurat_integrated, 
                           vars = c("ident", "sample")) %>% 
 dplyr::count(ident,  sample)
